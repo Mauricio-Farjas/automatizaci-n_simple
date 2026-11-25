@@ -1,28 +1,31 @@
-# Utilidades para el pre-procesamiento y limpieza de texto
+import unicodedata
+
 def sanitizar(name):
     """
-    Limpia y normaliza el input del usuario eliminando artículos, preposiciones y palabras clave 
-    que no forman parte del nombre del sujeto de búsqueda (ej. el nombre de una empresa).
-    
-    Argumentos:
-        name (str): Cadena de texto a sanitizar.
-        
-    Retorna:
-        str: El nombre del sujeto extraído y limpio.
+    Limpia y normaliza el input del usuario: convierte a minúsculas,
+    elimina tildes, diéresis, cambia 'ñ' por 'n' y quita prefijos comunes.
     """
-    # Lista de prefijos que queremos omitir para aislar el nombre real (ej. "precio de apple" -> "apple")
+    # 1. Convertir a minúsculas, quitar espacios y signos de interrogación
+    name = name.lower().strip().replace("?", "").replace("¿", "")
+    
+    # 2. Reemplazar 'ñ' antes de quitar marcas diacríticas
+    name = name.replace("ñ", "n")
+    
+    # 3. Eliminar tildes y diéresis (normalización NFD)
+    name = "".join(
+        c for c in unicodedata.normalize("NFD", name)
+        if unicodedata.category(c) != "Mn"
+    )
+    
+    # 4. Lista de prefijos a omitir para aislar el sujeto de búsqueda
     prefixes = [
-        'la ', 'el ', 'de ', 'acción ', 'accion ', 
-        'precio de ', 'precio ', 'stock de ', 'stock ',
-        'valor de ', 'valor '
+        "dime ", "cual es ", "el ", "la ", "de ", "en ",
+        "accion ", "precio de ", "precio ", "stock de ", "stock ",
+        "valor de ", "valor ", "clima ", "temperatura ", "tiempo ",
+        "actual "
     ]
     
-    # Convertir a minúsculas y quitar espacios en los extremos
-    name = name.lower().strip()
-    
     changed = True
-    # Bucle para eliminar prefijos de forma iterativa 
-    # Esto permite manejar casos como "la accion de apple" eliminando primero "la accion de " y luego el espacio sobrante.
     while changed:
         changed = False
         for p in prefixes:
